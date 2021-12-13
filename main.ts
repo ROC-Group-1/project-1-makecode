@@ -1,0 +1,6 @@
+scene.setBackgroundColor(7)
+tiles.setTilemap(tilemap`bottom`)
+let playerSprite = sprites.create(assets.image`default`, SpriteKind.Player)
+controller.moveSprite(playerSprite, 100, 100)
+scene.cameraFollowSprite(playerSprite)
+tiles.placeOnTile(playerSprite, tiles.getTileLocation(9, 0))
