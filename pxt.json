@@ -1,8 +1,12 @@
 {
-    "name": "Playground",
+    "name": "Environdent",
     "description": "",
     "dependencies": {
-        "device": "*"
+        "device": "*",
+        "color-coded-tilemap": "*",
+        "Timers": "github:microsoft/arcade-timers#v1.1.0",
+        "arcade-text": "github:microsoft/arcade-text#v1.3.0",
+        "Sprite Grid": "github:microsoft/arcade-grid#v1.3.0"
     },
     "files": [
         "main.blocks",
