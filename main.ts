@@ -67,11 +67,15 @@ function isDirectionPress () {
 scene.onOverlapTile(SpriteKind.Player, sprites.castle.tileGrass2, function (sprite, location) {
     newGrassLoc = getSpriteLocation(playerSprite)
     // Checking if the tile is flowers because this event is hyper sensitive
-    if (tiles.tileAtLocationEquals(newGrassLoc, sprites.castle.tileGrass2) && (!(lastGrassLoc) || lastGrassLoc.col != newGrassLoc.col || lastGrassLoc.row != newGrassLoc.row)) {
-        lastGrassLoc = newGrassLoc
-        if (randint(0, 19) >= 17) {
-            startEncounter(monsters._pickRandom())
+    if (tiles.tileAtLocationEquals(newGrassLoc, sprites.castle.tileGrass2)) {
+        if (!(lastGrassLoc) || lastGrassLoc.col != newGrassLoc.col || lastGrassLoc.row != newGrassLoc.row) {
+            lastGrassLoc = newGrassLoc
+            if (randint(0, 9) == 9) {
+                startEncounter(monsters._pickRandom())
+            }
         }
+    } else {
+        lastGrassLoc = tiles.getTileLocation(0, 0)
     }
 })
 function initMapScene (x: number, y: number) {
