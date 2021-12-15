@@ -8,6 +8,8 @@ namespace SpriteKind {
     export const Bush = SpriteKind.create()
     export const cursor = SpriteKind.create()
     export const button = SpriteKind.create()
+    export const Background = SpriteKind.create()
+    export const prop = SpriteKind.create()
 }
 // makes the player use a treat, wich makes it easier to catch, but more likely to run
 function useTreat () {
@@ -16,16 +18,7 @@ function useTreat () {
     aggravation += -1
     timer.after(2500, function () {
         textSprite.destroy()
-        berry = sprites.create(img`
-            . . . . . . . . 
-            . . . . . . . . 
-            . . . . 7 . . . 
-            . . . . 3 7 . . 
-            . . . 3 3 3 7 . 
-            . . 3 3 3 . . . 
-            . . 3 3 . . . . 
-            . . . . . . . . 
-            `, SpriteKind.Projectile)
+        berry = sprites.create(assets.image`Treat`, SpriteKind.Projectile)
         berry.setPosition(25, 69)
         berry.setVelocity(200, -84)
         timer.after(300, function () {
@@ -55,6 +48,82 @@ function getCreature () {
         `, SpriteKind.Enemy)
     creature.setPosition(104, 35)
 }
+function battleScene_Mac () {
+    setupBattleScene()
+    generateCow()
+    generateElephant()
+    generateBeaver()
+    generateGoat()
+}
+function setupBattleScene () {
+    scene.setBackgroundImage(assets.image`Sky`)
+    Grasssprite = sprites.create(assets.image`Grass`, SpriteKind.Background)
+    Grasssprite.setPosition(80, 60)
+    platforms = sprites.create(assets.image`BattlePlatforms`, SpriteKind.Background)
+    platforms.setPosition(80, 60)
+}
+function generateElephant () {
+    Envirodant = sprites.create(assets.image`Elephant`, SpriteKind.Enemy)
+    Envirodant.setPosition(134, 72)
+    animation.runImageAnimation(
+    Envirodant,
+    assets.animation`ElephantAnim`,
+    200,
+    true
+    )
+    envirodentAddition = sprites.create(img`
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        `, SpriteKind.Enemy)
+    envirodentAddition.setPosition(137, 85)
+    envirodentAddition2 = sprites.create(img`
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        `, SpriteKind.Enemy)
+    envirodentAddition2.setPosition(153, 85)
+}
+function generateBeaver () {
+    Envirodant = sprites.create(assets.image`Beaver`, SpriteKind.Enemy)
+    Envirodant.setPosition(133, 69)
+    animation.runImageAnimation(
+    Envirodant,
+    assets.animation`BeaverAnim`,
+    200,
+    true
+    )
+    envirodentAddition = sprites.create(assets.image`TreeStump`, SpriteKind.Enemy)
+    envirodentAddition.setPosition(137, 85)
+    envirodentAddition2 = sprites.create(assets.image`TreeStump`, SpriteKind.Enemy)
+    envirodentAddition2.setPosition(153, 85)
+}
 function getSpriteLocation (sprite: Sprite) {
     return getLocation(sprite.x, sprite.y)
 }
@@ -81,6 +150,54 @@ grid.place(npcs[0].sprite, tiles.getTileLocation(7, 2))
     if (isGlitching) {
         glitchInit()
     }
+}
+function generateCow () {
+    Envirodant = sprites.create(assets.image`Cow`, SpriteKind.Enemy)
+    Envirodant.setPosition(134, 64)
+    animation.runImageAnimation(
+    Envirodant,
+    assets.animation`CowAnim`,
+    500,
+    true
+    )
+    envirodentAddition = sprites.create(img`
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        `, SpriteKind.Enemy)
+    envirodentAddition.setPosition(137, 85)
+    envirodentAddition2 = sprites.create(img`
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        `, SpriteKind.Enemy)
+    envirodentAddition2.setPosition(153, 85)
 }
 function playerHasStopped () {
     if (rotation == "Right") {
@@ -179,6 +296,54 @@ function useRock () {
     textSprite = textsprite.create("You used a rock", 1, 15)
     textSprite.setPosition(50, 100)
     _throw = randint(0, 100)
+}
+function generateGoat () {
+    Envirodant = sprites.create(assets.image`Goat`, SpriteKind.Enemy)
+    Envirodant.setPosition(138, 72)
+    animation.runImageAnimation(
+    Envirodant,
+    assets.animation`GoatAnim`,
+    500,
+    true
+    )
+    envirodentAddition = sprites.create(img`
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        `, SpriteKind.Enemy)
+    envirodentAddition.setPosition(137, 85)
+    envirodentAddition2 = sprites.create(img`
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        `, SpriteKind.Enemy)
+    envirodentAddition2.setPosition(153, 85)
 }
 function turnStart () {
     story.startCutscene(function () {
@@ -393,6 +558,11 @@ let character: Sprite = null
 let HP: StatusBarSprite = null
 let throwableRock: Sprite = null
 let _throw = 0
+let envirodentAddition2: Sprite = null
+let envirodentAddition: Sprite = null
+let Envirodant: Sprite = null
+let platforms: Sprite = null
+let Grasssprite: Sprite = null
 let creature: Sprite = null
 let berry: Sprite = null
 let aggravation = 0
@@ -401,15 +571,15 @@ let staticKinds: number[] = []
 let monsters: string[] = []
 let isGrassHit = false
 let rotation = ""
-let isMap = false
-let isGlitching = false
-let npcLocation: tiles.Location = null
-let playerLocation: tiles.Location = null
-let newGrassLoc: tiles.Location = null
-let lastGrassLoc: tiles.Location = null
-let playerSprite: Sprite = null
-let isScene = false
 let npcRange = null
+let isScene = false
+let playerSprite: Sprite = null
+let lastGrassLoc: tiles.Location = null
+let newGrassLoc: tiles.Location = null
+let playerLocation: tiles.Location = null
+let npcLocation: tiles.Location = null
+let isGlitching = false
+let isMap = false
 let npcs = [{
     name: "Park Guard",
     callOut: "Stop!",
