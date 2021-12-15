@@ -3,13 +3,10 @@ namespace SpriteKind {
     export const NPC = SpriteKind.create()
     export const NPC_Left = SpriteKind.create()
     export const NPC_Right = SpriteKind.create()
-    export const NPC_Top = SpriteKind.create()
-    export const NPC_Bottom = SpriteKind.create()
+    export const NPC_Up = SpriteKind.create()
+    export const NPC_Down = SpriteKind.create()
     export const Bush = SpriteKind.create()
-    export const cursor = SpriteKind.create()
-    export const button = SpriteKind.create()
     export const Background = SpriteKind.create()
-    export const prop = SpriteKind.create()
 }
 // makes the player use a treat, wich makes it easier to catch, but more likely to run
 function useTreat () {
@@ -77,8 +74,10 @@ function initMap () {
     for (let flower of tiles.getTilesByType(sprites.castle.tileGrass2)) {
         tiles.placeOnTile(sprites.create(assets.image`bush`, SpriteKind.Bush), flower)
     }
-    npcs[0].sprite = sprites.create(assets.image`npc1`, SpriteKind.NPC_Right)
-grid.place(npcs[0].sprite, tiles.getTileLocation(7, 2))
+    for (let npcInfo of NPC.NPCS) {
+        npcInfo.sprite = sprites.create(npcInfo.image, npcInfo.kind)
+grid.place(npcInfo.sprite, getLocation(npcInfo.x, npcInfo.y))
+    }
     if (isGlitching) {
         glitchInit()
     }
@@ -135,6 +134,13 @@ function playerHasStopped () {
     }
     rotation = ""
 }
+info.onCountdownEnd(function () {
+    if (info.score() >= 100) {
+        game.over(true)
+    } else {
+        game.over(false)
+    }
+})
 // throw a rock to deal damage, making it harder to catch, but less likely to run
 function useRock () {
     story.printCharacterText("You used a rock.")
@@ -152,8 +158,8 @@ function useRock () {
         throwable.setVelocity(300, 23)
         timer.after(300, function () {
             throwable.destroy()
-            HP.value = HP.value - randint(10, 20)
-            if (HP.value == 0) {
+            hp.value = hp.value - randint(10, 20)
+            if (hp.value == 0) {
                 creature.vy += 100
                 timer.after(100, function () {
                     creature.destroy()
@@ -166,6 +172,19 @@ function useRock () {
                 enemyTurn()
             }
         })
+    }
+}
+function scoreForEncounter (name: string) {
+    if (name == "Beaver") {
+        return 30
+    } else if (name == "Cow") {
+        return 50
+    } else if (name == "Goat") {
+        return 20
+    } else if (name == "Elephant") {
+        return 50
+    } else {
+        return 123
     }
 }
 function generateGoat () {
@@ -200,11 +219,17 @@ function getSpecificCreature (name: string) {
     } else if (name == "Elephant") {
         generateElephant()
     } else {
-    	
+        creature = sprites.create(assets.image`missingno`, SpriteKind.Enemy)
+        creature.setPosition(138, 72)
+        effects.blizzard.startScreenEffect()
+        effects.starField.startScreenEffect()
     }
 }
 function startEncounter () {
     controller.moveSprite(playerSprite, 0, 0)
+    info.stopCountdown()
+    info.showScore(false)
+countdownLeft += 0 - Math.round((game.runtime() - countdownLastStart) / 1000)
     isMap = false
     music.stopAllSounds()
     for (let x = 0; x <= grid.numColumns(); x++) {
@@ -235,12 +260,18 @@ function startEncounter () {
         platformSprite.setPosition(80, 60)
         character = sprites.create(assets.image`default`, SpriteKind.Player)
         character.setPosition(25, 69)
-        story.printCharacterText("You encountered a wild " + getCreature(false) + "!")
+        story.printCharacterText("You encountered a wild " + getCreature(isGlitchEncounter) + "!")
         aggravation = 5
-        HP = statusbars.create(45, 4, StatusBarKind.EnemyHealth)
-        HP.max = 143
-        HP.value = 143
-        HP.setPosition(125, 10)
+        hp = statusbars.create(50, 4, StatusBarKind.EnemyHealth)
+        hp.max = 143
+        hp.value = 143
+        hp.setPosition(130, 15)
+        padding = ""
+        for (let index = 0; index < 8 - creatureName.length; index++) {
+            padding = "" + padding + " "
+        }
+        creatureNameSprite = textsprite.create("" + creatureName + padding, 0, 15)
+        creatureNameSprite.setPosition(130, 6)
         turnStart()
     })
 }
@@ -287,7 +318,12 @@ function returnToMap () {
         creature.destroy()
     }
     character.destroy()
-    HP.destroy()
+    hp.destroy()
+    creatureNameSprite.destroy()
+    if (isGlitchEncounter) {
+        effects.blizzard.endScreenEffect()
+        effects.starField.endScreenEffect()
+    }
     scene.setBackgroundImage(img`
         ................................................................................................................................................................
         ................................................................................................................................................................
@@ -431,6 +467,11 @@ function initMapScene (x: number, y: number) {
     controller.moveSprite(playerSprite, 70, 70)
     scene.cameraFollowSprite(playerSprite)
     music.setVolume(100)
+    if (countdownLastStart) {
+        info.showScore(true)
+countdownLastStart = game.runtime()
+        info.startCountdown(countdownLeft)
+    }
 }
 // makes the player throw the ball if selected
 function useBall () {
@@ -439,19 +480,26 @@ function useBall () {
     throwable.setPosition(25, 70)
     throwable.setVelocity(400, 40)
     timer.after(300, function () {
-        creature.destroy()
         throwable.setVelocity(0, 0)
+        creature.destroy()
     })
-    if (aggravation * 10 + (randint(0, 100) + HP.value) < 200) {
+    if (aggravation * 10 + (randint(0, 100) + hp.value) > 200) {
         timer.after(1000, function () {
             throwable.startEffect(effects.starField)
         })
         timer.after(2000, function () {
             effects.clearParticles(throwable)
+            x2 = throwable.x
+            y2 = throwable.y
+            throwable.destroy()
             throwable = sprites.create(assets.image`netStoneCaptured`, SpriteKind.Projectile)
-            story.printCharacterText("" + creatureName + " was caught!")
-            throwable.destroy(effects.confetti, 700)
+            throwable.setPosition(x2, y2)
+            throwable.startEffect(effects.confetti)
             timer.after(1000, function () {
+                effects.clearParticles(throwable)
+                story.printCharacterText("" + creatureName + " was caught!")
+                throwable.destroy()
+                info.changeScoreBy(scoreForEncounter(creatureName))
                 returnToMap()
             })
         })
@@ -464,115 +512,151 @@ function useBall () {
         })
     }
 }
+let y2 = 0
+let x2 = 0
+let creatureNameSprite: TextSprite = null
+let padding = ""
 let character: Sprite = null
 let platformSprite: Sprite = null
 let grassSprite: Sprite = null
-let HP: StatusBarSprite = null
+let hp: StatusBarSprite = null
 let creatureAddition2: Sprite = null
 let creatureAddition: Sprite = null
 let creature: Sprite = null
 let creatureName = ""
 let throwable: Sprite = null
 let aggravation = 0
+let isGlitchEncounter = false
 let staticKinds: number[] = []
 let creatures: string[] = []
 let isGrassHit = false
-let rotation = ""
-let isMap = false
-let isGlitching = false
-let npcLocation: tiles.Location = null
-let playerLocation: tiles.Location = null
-let newGrassLoc: tiles.Location = null
-let lastGrassLoc: tiles.Location = null
-let playerSprite: Sprite = null
-let isScene = false
 let npcRange = null
-let npcs = [{
-    name: "Park Guard",
-    callOut: "Stop!",
-    sprite: <Sprite | undefined>undefined,
-    dialogs: [
+let isScene = false
+let playerSprite: Sprite = null
+let lastGrassLoc: tiles.Location = null
+let newGrassLoc: tiles.Location = null
+let playerLocation: tiles.Location = null
+let npcLocation: tiles.Location = null
+let isGlitching = false
+let isMap = false
+let countdownLastStart = 0
+let countdownLeft = 0
+let rotation = ""
+namespace NPC {
+    export interface NPCInfo {
+        name: string,
+        callOut: string,
+        sprite?: Sprite,
+        kind: number,
+        image: Image,
+        goToAnimation: Image[],
+        goBackAnimation: Image[],
+        afterDialogCallback?: () => void
+        x: number,
+        y: number,
+        dialogs: {
+            name?: string,
+            text: string
+        }[],
+        range: number,
+        interacted: boolean
+    }
+    export const NPCS: NPCInfo[] = [
         {
-            name: "???",
-            text: "Hello there stranger, I'm the park guard.",
-        },
-        {
-            name: "Matthew",
-            text: "Hi there."
-        },
-        {
-            text: "Are you here to help with catching the farm animals?"
-        },
-        {
-            name: "Matthew",
-            text: "Yes, I am."
-        },
-        {
-            text: "Ok, then good luck out there. Hurry though, before it's too late!"
-        }
-    ],
-    range: 5,
-    interacted: false
-}]
-interface NPCInfo {
-    name: string,
-    callOut: string,
-    sprite: Sprite,
-    dialogs: {
-        name?: string,
-        text: string
-    }[],
-    range: number,
-    interacted: boolean
-}
-function npcInteraction(npc: NPCInfo, x: number, y: number) {
-    let originalCords = [npc.sprite.x, npc.sprite.y]
-    let originalLoc = getLocation(originalCords[0], originalCords[1]);
-    let originalImage = npc.sprite.image
-    let goBackAnimation: Image[] = null
-    let afterCallback: () => void
-    story.startCutscene(function () {
-        isScene = true
-        controller.moveSprite(playerSprite, 0, 0)
-        playerHasStopped()
-        story.spriteSayText(npc.sprite, npc.callOut, 15, 1, story.TextSpeed.VeryFast)
-        if (npc.name == "Park Guard") {
-            goBackAnimation = assets.animation`heroWalkLeft`
-            afterCallback = () => {
-                info.startCountdown(300)
-                timer.after(300000 - 5000, function () {
+            name: "Park Guard",
+            callOut: "Stop!",
+            sprite: <Sprite | undefined>undefined,
+            kind: SpriteKind.NPC_Right,
+            x: 112,
+            y: 32,
+            image: assets.image`npc1`,
+            goToAnimation: assets.animation`heroWalkRight`,
+            goBackAnimation: assets.animation`heroWalkLeft`,
+            afterDialogCallback: () => {
+                info.setScore(0)
+                timer.after(countdownLeft * 1000 - 5000, function () {
                     isGlitching = true
                     if (isMap) {
                         glitchInit()
                     }
                 })
+            },
+            dialogs: [
+                {
+                    name: "???",
+                    text: "Hello there stranger, I'm the park guard.",
+                },
+                {
+                    name: "Matthew",
+                    text: "Hi there."
+                },
+                {
+                    text: "Are you here to help with catching the farm animals?"
+                },
+                {
+                    name: "Matthew",
+                    text: "Yes, I am."
+                },
+                {
+                    text: "Ok, then good luck out there. Hurry though, before it's too late!"
+                }
+            ],
+            range: 5,
+            interacted: false
+        }
+    ]
+    export function interaction(npc: NPC.NPCInfo, x: number, y: number) {
+        if (countdownLastStart) {
+            info.showScore(false)
+            info.stopCountdown()
+            countdownLeft -= Math.round((game.runtime() - countdownLastStart) / 1000)
+        }
+        let originalCords = [npc.sprite.x, npc.sprite.y]
+        let originalLoc = getLocation(originalCords[0], originalCords[1]);
+        let originalImage = npc.sprite.image
+        switch (npc.kind) {
+            case SpriteKind.NPC_Left:
+                rotation = "Right"
+                break;
+            case SpriteKind.NPC_Right:
+                rotation = "Left"
+                break
+            case SpriteKind.NPC_Up:
+                rotation = "Down"
+                break;
+            case SpriteKind.NPC_Down:
+                rotation = "Up"
+                break;
+        }
+        story.startCutscene(function () {
+            isScene = true
+            controller.moveSprite(playerSprite, 0, 0)
+            playerHasStopped()
+            story.spriteSayText(npc.sprite, npc.callOut, 15, 1, story.TextSpeed.VeryFast)
+            animation.runImageAnimation(npc.sprite, npc.goToAnimation, 200, true)
+            story.spriteMoveToLocation(npc.sprite, x, y, 70)
+            animation.stopAnimation(animation.AnimationTypes.ImageAnimation, npc.sprite)
+            npc.sprite.setImage(originalImage)
+            for (let dialog of npc.dialogs) {
+                story.printCharacterText(dialog.text, dialog.name || npc.name)
             }
-            animation.runImageAnimation(npc.sprite, assets.animation`heroWalkRight`, 200, true)
-        }
-        story.spriteMoveToLocation(npc.sprite, x, y, 70)
-        animation.stopAnimation(animation.AnimationTypes.ImageAnimation, npc.sprite)
-        npc.sprite.setImage(originalImage)
-        for (let dialog of npc.dialogs) {
-            story.printCharacterText(dialog.text, dialog.name || npc.name)
-        }
-        if (afterCallback) {
-            afterCallback()
-        }
-        animation.runImageAnimation(
-            npc.sprite,
-            goBackAnimation,
-            200,
-            true
-        )
-        tiles.setWallAt(tiles.getTileLocation(originalLoc.col, originalLoc.row), false)
-        story.spriteMoveToLocation(npc.sprite, originalCords[0], originalCords[1], 70)
-        animation.stopAnimation(animation.AnimationTypes.ImageAnimation, npc.sprite)
-        npc.sprite.setImage(originalImage)
-        tiles.setWallAt(tiles.getTileLocation(originalLoc.col, originalLoc.row), true)
-        isScene = false
-        npc.interacted = true
-        controller.moveSprite(playerSprite, 70, 70)
-    })
+            animation.runImageAnimation(npc.sprite, npc.goBackAnimation, 200, true)
+            tiles.setWallAt(tiles.getTileLocation(originalLoc.col, originalLoc.row), false)
+            story.spriteMoveToLocation(npc.sprite, originalCords[0], originalCords[1], 70)
+            animation.stopAnimation(animation.AnimationTypes.ImageAnimation, npc.sprite)
+            npc.sprite.setImage(originalImage)
+            tiles.setWallAt(tiles.getTileLocation(originalLoc.col, originalLoc.row), true)
+            if (npc.afterDialogCallback) {
+                npc.afterDialogCallback()
+            }
+            isScene = false
+            npc.interacted = true
+            controller.moveSprite(playerSprite, 70, 70)
+            countdownLastStart = game.runtime()
+            info.showScore(true)
+            info.startCountdown(countdownLeft)
+        })
+    }
 }
 rotation = "Down"
 isGrassHit = false
@@ -588,10 +672,12 @@ staticKinds = [
 SpriteKind.Static,
 SpriteKind.NPC_Left,
 SpriteKind.NPC_Right,
-SpriteKind.NPC_Top,
-SpriteKind.NPC_Bottom,
+SpriteKind.NPC_Up,
+SpriteKind.NPC_Down,
 SpriteKind.Bush
 ]
+countdownLeft = 300
+isGlitchEncounter = false
 initMapScene(160, 5)
 // effects
 forever(function () {
@@ -684,33 +770,29 @@ game.onUpdateInterval(100, function () {
         } else {
             playerHasStopped()
         }
-        for (let npc of npcs) {
+        for (let npc of NPC.NPCS) {
             // If the sprite isn't a static NPC
             if (npc.sprite.kind() != SpriteKind.NPC && !(npc.interacted)) {
                 npcLocation = getSpriteLocation(npc.sprite)
-                if (npc.sprite.kind() == SpriteKind.NPC_Left) {
+                if (npc.kind == SpriteKind.NPC_Left) {
                     npcRange = grid.add(getSpriteLocation(npc.sprite), -1 * npc.range, 0)
                     if (npcRange.col <= playerLocation.col && npcLocation.col >= playerLocation.col && npcLocation.row == playerLocation.row) {
-                        rotation = "Right"
-                        npcInteraction(npc, playerSprite.x + 16, npc.sprite.y)
+                        NPC.interaction(npc, playerSprite.x + 16, npc.sprite.y)
                     }
-                } else if (npc.sprite.kind() == SpriteKind.NPC_Right) {
+                } else if (npc.kind == SpriteKind.NPC_Right) {
                     npcRange = grid.add(getSpriteLocation(npc.sprite), npc.range, 0)
                     if (npcRange.col >= playerLocation.col && npcLocation.col <= playerLocation.col && npcLocation.row == playerLocation.row) {
-                        rotation = "Left"
-                        npcInteraction(npc, playerSprite.x - 16, npc.sprite.y)
+                        NPC.interaction(npc, playerSprite.x - 16, npc.sprite.y)
                     }
-                } else if (npc.sprite.kind() == SpriteKind.NPC_Top) {
+                } else if (npc.kind == SpriteKind.NPC_Up) {
                     npcRange = grid.add(getSpriteLocation(npc.sprite), 0, -1 * npc.range)
                     if (npcRange.row <= playerLocation.row && npcLocation.row >= playerLocation.row && npcLocation.col == playerLocation.col) {
-                        rotation = "Down"
-                        npcInteraction(npc, npc.sprite.x, playerSprite.y - 16)
+                        NPC.interaction(npc, npc.sprite.x, playerSprite.y - 16)
                     }
-                } else if (npc.sprite.kind() == SpriteKind.NPC_Bottom) {
+                } else if (npc.kind == SpriteKind.NPC_Down) {
                     npcRange = grid.add(getSpriteLocation(npc.sprite), 0, npc.range)
                     if (npcRange.row >= playerLocation.row && npcLocation.row <= playerLocation.row && npcLocation.col == playerLocation.col) {
-                        rotation = "Up"
-                        npcInteraction(npc, npc.sprite.x, playerSprite.y + 16)
+                        NPC.interaction(npc, npc.sprite.x, playerSprite.y + 16)
                     }
                 }
             }
