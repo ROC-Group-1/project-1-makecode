@@ -7,7 +7,8 @@
         "Timers": "github:microsoft/arcade-timers#v1.1.0",
         "arcade-text": "github:microsoft/arcade-text#v1.3.0",
         "Sprite Grid": "github:microsoft/arcade-grid#v1.3.0",
-        "arcade-story": "github:microsoft/arcade-storytelling#v1.0.3"
+        "arcade-story": "github:microsoft/arcade-storytelling#v1.0.3",
+        "pxt-status-bar": "github:jwunderl/pxt-status-bar#v0.4.1"
     },
     "files": [
         "main.blocks",
@@ -29,5 +30,5 @@
     "supportedTargets": [
         "arcade"
     ],
-    "preferredEditor": "tsprj"
+    "preferredEditor": "blocksprj"
 }
