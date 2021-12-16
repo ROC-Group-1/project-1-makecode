@@ -596,7 +596,7 @@ function useBall () {
         throwable.setVelocity(0, 0)
         creature.destroy()
     })
-    if (aggravation * 10 + (randint(0, 100) + hp.value) > 200) {
+    if (aggravation * 10 + (randint(0, 100) + hp.value) < 200) {
         timer.after(1000, function () {
             throwable.startEffect(effects.starField)
         })
