@@ -10,6 +10,7 @@ namespace SpriteKind {
 }
 // makes the player use a treat, wich makes it easier to catch, but more likely to run
 function useTreat () {
+    moveBattleScene(false)
     story.printCharacterText("You threw a treat.")
     aggravation += -1
     throwable = sprites.create(assets.image`treat`, SpriteKind.Projectile)
@@ -28,6 +29,36 @@ function getCreature (glitch: boolean) {
     }
     getSpecificCreature(creatureName)
     return creatureName
+}
+function moveBattleScene (up: boolean) {
+    for (let backgroundSprite of sprites.allOfKind(SpriteKind.Background)) {
+        if (up) {
+            backgroundSprite.setVelocity(0, -60)
+        } else {
+            backgroundSprite.setVelocity(0, 60)
+        }
+        timer.after(500, function () {
+            backgroundSprite.setVelocity(0, 0)
+        })
+    }
+    for (let enemySprite of sprites.allOfKind(SpriteKind.Enemy)) {
+        if (up) {
+            enemySprite.setVelocity(0, -60)
+        } else {
+            enemySprite.setVelocity(0, 60)
+        }
+        timer.after(500, function () {
+            enemySprite.setVelocity(0, 0)
+        })
+    }
+    if (up) {
+        character.setVelocity(0, -100)
+    } else {
+        character.setVelocity(0, 100)
+    }
+    timer.after(500, function () {
+        character.setVelocity(0, 0)
+    })
 }
 function generateElephant () {
     creature = sprites.create(assets.image`elephant`, SpriteKind.Enemy)
@@ -75,8 +106,10 @@ function initMap () {
         tiles.placeOnTile(sprites.create(assets.image`bush`, SpriteKind.Bush), flower)
     }
     for (let npcInfo of NPC.NPCS) {
+        npcLocation = getLocation(npcInfo.x, npcInfo.y)
         npcInfo.sprite = sprites.create(npcInfo.image, npcInfo.kind)
-grid.place(npcInfo.sprite, getLocation(npcInfo.x, npcInfo.y))
+grid.place(npcInfo.sprite, npcLocation)
+        tiles.setWallAt(npcLocation, true)
     }
     if (isGlitching) {
         glitchInit()
@@ -135,7 +168,7 @@ function playerHasStopped () {
     rotation = ""
 }
 info.onCountdownEnd(function () {
-    if (info.score() >= 100) {
+    if (info.score() >= 200) {
         game.over(true)
     } else {
         game.over(false)
@@ -143,6 +176,7 @@ info.onCountdownEnd(function () {
 })
 // throw a rock to deal damage, making it harder to catch, but less likely to run
 function useRock () {
+    moveBattleScene(false)
     story.printCharacterText("You used a rock.")
     throwable = sprites.create(assets.image`rock`, SpriteKind.Projectile)
     throwable.setPosition(25, 70)
@@ -150,6 +184,7 @@ function useRock () {
         throwable.setVelocity(400, 100)
         timer.after(300, function () {
             throwable.destroy()
+            moveBattleScene(true)
             story.printCharacterText("The Rock missed.")
             enemyTurn()
         })
@@ -177,7 +212,7 @@ function useRock () {
 function scoreForEncounter (name: string) {
     if (name == "Beaver") {
         return 30
-    } else if (name == "Cow") {
+    } else if (name == "Mega Cow") {
         return 50
     } else if (name == "Goat") {
         return 20
@@ -212,7 +247,7 @@ function turnStart () {
 function getSpecificCreature (name: string) {
     if (name == "Beaver") {
         generateBeaver()
-    } else if (name == "Cow") {
+    } else if (name == "Mega Cow") {
         generateCow()
     } else if (name == "Goat") {
         generateGoat()
@@ -232,9 +267,10 @@ function startEncounter () {
 countdownLeft += 0 - Math.round((game.runtime() - countdownLastStart) / 1000)
     isMap = false
     music.stopAllSounds()
-    for (let x = 0; x <= grid.numColumns(); x++) {
-        for (let y = 0; y <= grid.numRows(); y++) {
-            tiles.setTileAt(tiles.getTileLocation(x, y), assets.tile`transparency16`)
+    for (let x2 = 0; x2 <= grid.numColumns(); x2++) {
+        for (let y2 = 0; y2 <= grid.numRows(); y2++) {
+            tiles.setTileAt(tiles.getTileLocation(x2, y2), assets.tile`transparency16`)
+            tiles.setWallAt(tiles.getTileLocation(x2, y2), false)
         }
     }
     playerSprite.destroy()
@@ -256,22 +292,24 @@ countdownLeft += 0 - Math.round((game.runtime() - countdownLastStart) / 1000)
         scene.setBackgroundImage(assets.image`sky`)
         grassSprite = sprites.create(assets.image`grass`, SpriteKind.Background)
         grassSprite.setPosition(80, 60)
-        platformSprite = sprites.create(assets.image`battlePlatforms`, SpriteKind.Background)
-        platformSprite.setPosition(80, 60)
-        character = sprites.create(assets.image`default`, SpriteKind.Player)
-        character.setPosition(25, 69)
-        story.printCharacterText("You encountered a wild " + getCreature(isGlitchEncounter) + "!")
+        platformSprite = sprites.create(assets.image`battlePlatformsNew`, SpriteKind.Background)
+        platformSprite.setPosition(80, 70)
+        character = sprites.create(assets.image`matthewBattle`, SpriteKind.Player)
+        character.setPosition(14, 108)
         aggravation = 5
         hp = statusbars.create(50, 4, StatusBarKind.EnemyHealth)
         hp.max = 143
         hp.value = 143
         hp.setPosition(130, 15)
         padding = ""
+        getCreature(isGlitchEncounter)
         for (let index = 0; index < 8 - creatureName.length; index++) {
             padding = "" + padding + " "
         }
         creatureNameSprite = textsprite.create("" + creatureName + padding, 0, 15)
         creatureNameSprite.setPosition(130, 6)
+        moveBattleScene(true)
+        story.printCharacterText("You encountered a wild " + creatureName + "!")
         turnStart()
     })
 }
@@ -284,6 +322,7 @@ function getLocation (x: number, y: number) {
 // make the enemy make its move
 function enemyTurn () {
     timer.after(1000, function () {
+        moveBattleScene(true)
         if (aggravation * 10 + randint(0, 100) < 95) {
             creature.vx += 100
             timer.after(100, function () {
@@ -303,10 +342,15 @@ scene.onOverlapTile(SpriteKind.Player, sprites.castle.tileGrass2, function (spri
     if (tiles.tileAtLocationEquals(newGrassLoc, sprites.castle.tileGrass2)) {
         if (!(lastGrassLoc) || lastGrassLoc.col != newGrassLoc.col || lastGrassLoc.row != newGrassLoc.row) {
             lastGrassLoc = newGrassLoc
-            if (randint(0, 9) == 9) {
-                startEncounter()
+            if (playerSprite.overlapsWith(sprites.create(assets.image`bushGlitch`, SpriteKind.Bush))) {
+                if (randint(0, 9) == 9) {
+                    startEncounter()
+                } else {
+                    isGrassHit = true
+                }
             } else {
-                isGrassHit = true
+                isGlitchEncounter = true
+                startEncounter()
             }
         }
     } else {
@@ -314,6 +358,7 @@ scene.onOverlapTile(SpriteKind.Player, sprites.castle.tileGrass2, function (spri
     }
 })
 function returnToMap () {
+    isGlitchEncounter = false
     if (creature) {
         creature.destroy()
     }
@@ -449,11 +494,11 @@ function returnToMap () {
     for (let projectileSprite of sprites.allOfKind(SpriteKind.Projectile)) {
         projectileSprite.destroy()
     }
-    for (let enemySprite of sprites.allOfKind(SpriteKind.Enemy)) {
-        enemySprite.destroy()
+    for (let enemySprite2 of sprites.allOfKind(SpriteKind.Enemy)) {
+        enemySprite2.destroy()
     }
-    for (let backgroundSprite of sprites.allOfKind(SpriteKind.Background)) {
-        backgroundSprite.destroy()
+    for (let backgroundSprite2 of sprites.allOfKind(SpriteKind.Background)) {
+        backgroundSprite2.destroy()
     }
     initMapScene(playerSprite.x, playerSprite.y)
 }
@@ -464,6 +509,63 @@ function initMapScene (x: number, y: number) {
     lastGrassLoc = getLocation(x, y)
     playerSprite = sprites.create(assets.image`player`, SpriteKind.Player)
     playerSprite.setPosition(x, y)
+    for (let house of tiles.getTilesByType(sprites.builtin.forestTiles10)) {
+        tiles.placeOnTile(sprites.create(img`
+            ....................e2e22e2e....................
+            .................222eee22e2e222.................
+            ..............222e22e2e22eee22e222..............
+            ...........e22e22eeee2e22e2eeee22e22e...........
+            ........eeee22e22e22e2e22e2e22e22e22eeee........
+            .....222e22e22eeee22e2e22e2e22eeee22e22e222.....
+            ...22eeee22e22e22e22eee22eee22e22e22e22eeee22...
+            4cc22e22e22eeee22e22e2e22e2e22e22eeee22e22e22cc4
+            6c6eee22e22e22e22e22e2e22e2e22e22e22e22e22eee6c6
+            46622e22eeee22e22eeee2e22e2eeee22e22eeee22e22664
+            46622e22e22e22eeee22e2e22e2e22eeee22e22e22e22664
+            4cc22eeee22e22e22e22eee22eee22e22e22e22eeee22cc4
+            6c622e22e22eeee22e22e2e22e2e22e22eeee22e22e226c6
+            466eee22e22e22e22e22e2e22e2e22e22e22e22e22eee664
+            46622e22eeee22e22e22e2e22e2e22e22e22eeee22e22664
+            4cc22e22e22e22e22eeee2e22e2eeee22e22e22e22e22cc4
+            6c622eeee22e22eeee22eee22eee22eeee22e22eeee226c6
+            46622e22e22eeee22e22e2e22e2e22e22eeee22e22e22664
+            466eee22e22e22e22e22e2e22e2e22e22e22e22e22eee664
+            4cc22e22eeee22e22e22e2e22e2e22e22e22eeee22e22cc4
+            6c622e22e22e22e22e22eee22eee22e22e22e22e22e226c6
+            46622eeee22e22e22eeecc6666cceee22e22e22eeee22664
+            46622e22e22e22eeecc6666666666cceee22e22e22e22664
+            4cceee22e22eeecc66666cccccc66666cceee22e22eeecc4
+            6c622e22eeecc66666cc64444446cc66666cceee22e226c6
+            46622e22cc66666cc64444444444446cc66666cc22e22664
+            46622cc6666ccc64444444444444444446ccc6666cc22664
+            4ccc6666ccc6444bcc666666666666ccb4446ccc6666ccc4
+            cccccccc6666666cb44444444444444bc6666666cccccccc
+            64444444444446c444444444444444444c64444444444446
+            66cb444444444cb411111111111111114bc444444444bc66
+            666cccccccccccd166666666666666661dccccccccccc666
+            6666444444444c116eeeeeeeeeeeeee611c4444444446666
+            666e2222222e4c16e4e44e44e44e44ee61c4e2222222e666
+            666eeeeeeeee4c16e4e44e44e44e44ee61c4eeeeeeeee666
+            666eddddddde4c66f4e4effffffe44ee66c4eddddddde666
+            666edffdffde4c66f4effffffffff4ee66c4edffdffde666
+            666edccdccde4c66f4effffffffffeee66c4edccdccde666
+            666eddddddde4c66f4eeeeeeeeeeeeee66c4eddddddde666
+            c66edffdffde4c66e4e44e44e44e44ee66c4edffdffde66c
+            c66edccdccde4c66e4e44e44e44e44ee66c4edccdccde66c
+            cc66666666664c66e4e44e44e44feeee66c46666666666cc
+            .c66444444444c66e4e44e44e44ffffe66c44444444466c.
+            ..c64eee4eee4c66f4e44e44e44f44fe66c4eee4eee46c..
+            ...c4eee4eee4c66f4e44e44e44effee66c4eee4eee4c...
+            ....644444444c66f4e44e44e44e44ee66c444444446....
+            .....64eee444c66f4e44e44e44e44ee66c444eee46.....
+            ......6ccc666c66e4e44e44e44e44ee66c666ccc6......
+            `, SpriteKind.Static), house)
+        for (let y = 0; y <= 1; y++) {
+            for (let x = 0; x <= 2; x++) {
+                tiles.setWallAt(grid.add(house, x - 1, y), true)
+            }
+        }
+    }
     controller.moveSprite(playerSprite, 70, 70)
     scene.cameraFollowSprite(playerSprite)
     music.setVolume(100)
@@ -475,6 +577,7 @@ countdownLastStart = game.runtime()
 }
 // makes the player throw the ball if selected
 function useBall () {
+    moveBattleScene(false)
     story.printCharacterText("You used the net stone")
     throwable = sprites.create(assets.image`netStone`, SpriteKind.Projectile)
     throwable.setPosition(25, 70)
@@ -489,11 +592,11 @@ function useBall () {
         })
         timer.after(2000, function () {
             effects.clearParticles(throwable)
-            x2 = throwable.x
-            y2 = throwable.y
+            x22 = throwable.x
+            y22 = throwable.y
             throwable.destroy()
             throwable = sprites.create(assets.image`netStoneCaptured`, SpriteKind.Projectile)
-            throwable.setPosition(x2, y2)
+            throwable.setPosition(x22, y22)
             throwable.startEffect(effects.confetti)
             timer.after(1000, function () {
                 effects.clearParticles(throwable)
@@ -512,17 +615,18 @@ function useBall () {
         })
     }
 }
-let y2 = 0
-let x2 = 0
+let y22 = 0
+let x22 = 0
 let creatureNameSprite: TextSprite = null
 let padding = ""
-let character: Sprite = null
 let platformSprite: Sprite = null
 let grassSprite: Sprite = null
 let hp: StatusBarSprite = null
+let npcLocation: tiles.Location = null
 let creatureAddition2: Sprite = null
 let creatureAddition: Sprite = null
 let creature: Sprite = null
+let character: Sprite = null
 let creatureName = ""
 let throwable: Sprite = null
 let aggravation = 0
@@ -530,18 +634,18 @@ let isGlitchEncounter = false
 let staticKinds: number[] = []
 let creatures: string[] = []
 let isGrassHit = false
-let npcRange = null
-let isScene = false
-let playerSprite: Sprite = null
-let lastGrassLoc: tiles.Location = null
-let newGrassLoc: tiles.Location = null
-let playerLocation: tiles.Location = null
-let npcLocation: tiles.Location = null
-let isGlitching = false
-let isMap = false
-let countdownLastStart = 0
-let countdownLeft = 0
 let rotation = ""
+let countdownLeft = 0
+let countdownLastStart = 0
+let isMap = false
+let isGlitching = false
+let npcLocation2: tiles.Location = null
+let playerLocation: tiles.Location = null
+let newGrassLoc: tiles.Location = null
+let lastGrassLoc: tiles.Location = null
+let playerSprite: Sprite = null
+let isScene = false
+let npcRange = null
 namespace NPC {
     export interface NPCInfo {
         name: string,
@@ -565,7 +669,7 @@ namespace NPC {
         {
             name: "Park Guard",
             callOut: "Stop!",
-            sprite: <Sprite | undefined>undefined,
+            sprite: undefined,
             kind: SpriteKind.NPC_Right,
             x: 112,
             y: 32,
@@ -574,7 +678,7 @@ namespace NPC {
             goBackAnimation: assets.animation`heroWalkLeft`,
             afterDialogCallback: () => {
                 info.setScore(0)
-                timer.after(countdownLeft * 1000 - 5000, function () {
+                timer.after(/*countdownLeft * 2000*/1000, function () {
                     isGlitching = true
                     if (isMap) {
                         glitchInit()
@@ -602,6 +706,42 @@ namespace NPC {
                 }
             ],
             range: 5,
+            interacted: false
+        },
+        {
+            name: "Bystander",
+            callOut: "You there!",
+            sprite: undefined,
+            kind: SpriteKind.NPC_Right,
+            x: 80,
+            y: 80,
+            image: assets.image`villager3WalkRight3`,
+            goToAnimation: assets.animation`villager3WalkRight`,
+            goBackAnimation: assets.animation`villager3WalkLeft`,
+            dialogs: [
+                {
+                    text: ""
+                }
+            ],
+            range: 5,
+            interacted: false
+        },
+        {
+            name: "Bystander",
+            callOut: "Hey!",
+            sprite: undefined,
+            kind: SpriteKind.NPC_Down,
+            x: 192,
+            y: 112,
+            image: assets.image`villager2WalkFront1`,
+            goToAnimation: assets.animation`villager2WalkFront`,
+            goBackAnimation: assets.animation`villager2WalkBack`,
+            dialogs: [
+                {
+                    text: ""
+                }
+            ],
+            range: 4,
             interacted: false
         }
     ]
@@ -633,6 +773,7 @@ namespace NPC {
             controller.moveSprite(playerSprite, 0, 0)
             playerHasStopped()
             story.spriteSayText(npc.sprite, npc.callOut, 15, 1, story.TextSpeed.VeryFast)
+            tiles.setWallAt(tiles.getTileLocation(originalLoc.col, originalLoc.row), false)
             animation.runImageAnimation(npc.sprite, npc.goToAnimation, 200, true)
             story.spriteMoveToLocation(npc.sprite, x, y, 70)
             animation.stopAnimation(animation.AnimationTypes.ImageAnimation, npc.sprite)
@@ -641,7 +782,6 @@ namespace NPC {
                 story.printCharacterText(dialog.text, dialog.name || npc.name)
             }
             animation.runImageAnimation(npc.sprite, npc.goBackAnimation, 200, true)
-            tiles.setWallAt(tiles.getTileLocation(originalLoc.col, originalLoc.row), false)
             story.spriteMoveToLocation(npc.sprite, originalCords[0], originalCords[1], 70)
             animation.stopAnimation(animation.AnimationTypes.ImageAnimation, npc.sprite)
             npc.sprite.setImage(originalImage)
@@ -664,7 +804,7 @@ isGlitching = false
 creatures = [
 "Beaver",
 "Goat",
-"Cow",
+"Mega Cow",
 "Elephant",
 "$^*$-44e3${$#}@"
 ]
@@ -773,26 +913,26 @@ game.onUpdateInterval(100, function () {
         for (let npc of NPC.NPCS) {
             // If the sprite isn't a static NPC
             if (npc.sprite.kind() != SpriteKind.NPC && !(npc.interacted)) {
-                npcLocation = getSpriteLocation(npc.sprite)
+                npcLocation2 = getSpriteLocation(npc.sprite)
                 if (npc.kind == SpriteKind.NPC_Left) {
                     npcRange = grid.add(getSpriteLocation(npc.sprite), -1 * npc.range, 0)
-                    if (npcRange.col <= playerLocation.col && npcLocation.col >= playerLocation.col && npcLocation.row == playerLocation.row) {
+                    if (npcRange.col <= playerLocation.col && npcLocation2.col >= playerLocation.col && npcLocation2.row == playerLocation.row) {
                         NPC.interaction(npc, playerSprite.x + 16, npc.sprite.y)
                     }
                 } else if (npc.kind == SpriteKind.NPC_Right) {
                     npcRange = grid.add(getSpriteLocation(npc.sprite), npc.range, 0)
-                    if (npcRange.col >= playerLocation.col && npcLocation.col <= playerLocation.col && npcLocation.row == playerLocation.row) {
+                    if (npcRange.col >= playerLocation.col && npcLocation2.col <= playerLocation.col && npcLocation2.row == playerLocation.row) {
                         NPC.interaction(npc, playerSprite.x - 16, npc.sprite.y)
                     }
                 } else if (npc.kind == SpriteKind.NPC_Up) {
                     npcRange = grid.add(getSpriteLocation(npc.sprite), 0, -1 * npc.range)
-                    if (npcRange.row <= playerLocation.row && npcLocation.row >= playerLocation.row && npcLocation.col == playerLocation.col) {
-                        NPC.interaction(npc, npc.sprite.x, playerSprite.y - 16)
+                    if (npcRange.row <= playerLocation.row && npcLocation2.row >= playerLocation.row && npcLocation2.col == playerLocation.col) {
+                        NPC.interaction(npc, npc.sprite.x, playerSprite.y + 16)
                     }
                 } else if (npc.kind == SpriteKind.NPC_Down) {
                     npcRange = grid.add(getSpriteLocation(npc.sprite), 0, npc.range)
-                    if (npcRange.row >= playerLocation.row && npcLocation.row <= playerLocation.row && npcLocation.col == playerLocation.col) {
-                        NPC.interaction(npc, npc.sprite.x, playerSprite.y + 16)
+                    if (npcRange.row >= playerLocation.row && npcLocation2.row <= playerLocation.row && npcLocation2.col == playerLocation.col) {
+                        NPC.interaction(npc, npc.sprite.x, playerSprite.y - 16)
                     }
                 }
             }
