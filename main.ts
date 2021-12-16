@@ -7,6 +7,7 @@ namespace SpriteKind {
     export const NPC_Down = SpriteKind.create()
     export const Bush = SpriteKind.create()
     export const Background = SpriteKind.create()
+    export const Bug_Bush = SpriteKind.create()
 }
 // makes the player use a treat, wich makes it easier to catch, but more likely to run
 function useTreat () {
@@ -14,8 +15,8 @@ function useTreat () {
     story.printCharacterText("You threw a treat.")
     aggravation += -1
     throwable = sprites.create(assets.image`treat`, SpriteKind.Projectile)
-    throwable.setPosition(25, 70)
-    throwable.setVelocity(300, 23)
+    throwable.setPosition(10, 100)
+    throwable.setVelocity(400, -100)
     timer.after(300, function () {
         throwable.destroy()
         enemyTurn()
@@ -89,8 +90,10 @@ function getSpriteLocation (sprite: Sprite) {
 }
 function glitchInit () {
     for (let bushSprite of sprites.allOfKind(SpriteKind.Bush)) {
-        if (randint(0, 19) == 19) {
-            bushSprite.setImage(assets.image`bushGlitch`)
+        if (randint(0, 9) == 9) {
+            flower2 = getLocation(bushSprite.x, bushSprite.y)
+            bushSprite.destroy()
+            tiles.placeOnTile(sprites.create(assets.image`bushGlitch`, SpriteKind.Bug_Bush), flower2)
         }
     }
 }
@@ -100,7 +103,11 @@ controller.A.onEvent(ControllerButtonEvent.Pressed, function () {
     }
 })
 function initMap () {
-    scene.setBackgroundColor(7)
+    if (glitchEncountered) {
+        scene.setBackgroundColor(15)
+    } else {
+        scene.setBackgroundColor(7)
+    }
     tiles.setTilemap(tilemap`map`)
     for (let flower of tiles.getTilesByType(sprites.castle.tileGrass2)) {
         tiles.placeOnTile(sprites.create(assets.image`bush`, SpriteKind.Bush), flower)
@@ -179,18 +186,17 @@ function useRock () {
     moveBattleScene(false)
     story.printCharacterText("You used a rock.")
     throwable = sprites.create(assets.image`rock`, SpriteKind.Projectile)
-    throwable.setPosition(25, 70)
+    throwable.setPosition(10, 100)
     if (randint(0, 100) < 15) {
-        throwable.setVelocity(400, 100)
+        throwable.setVelocity(400, 0)
         timer.after(300, function () {
             throwable.destroy()
-            moveBattleScene(true)
             story.printCharacterText("The Rock missed.")
             enemyTurn()
         })
     } else {
         aggravation += 1
-        throwable.setVelocity(300, 23)
+        throwable.setVelocity(400, -100)
         timer.after(300, function () {
             throwable.destroy()
             hp.value = hp.value - randint(10, 20)
@@ -258,6 +264,13 @@ function getSpecificCreature (name: string) {
         creature.setPosition(138, 72)
         effects.blizzard.startScreenEffect()
         effects.starField.startScreenEffect()
+        hp.startEffect(effects.ashes)
+        creature.startEffect(effects.ashes)
+        for (let backgroundSprite2 of sprites.allOfKind(SpriteKind.Background)) {
+            backgroundSprite2.startEffect(effects.ashes)
+            backgroundSprite2.startEffect(effects.trail)
+            backgroundSprite2.startEffect(effects.blizzard)
+        }
     }
 }
 function startEncounter () {
@@ -319,6 +332,13 @@ function isDirectionPressed () {
 function getLocation (x: number, y: number) {
     return tiles.getTileLocation(Math.floor(x / 16), Math.floor(y / 16))
 }
+sprites.onOverlap(SpriteKind.Player, SpriteKind.Bug_Bush, function (sprite, otherSprite) {
+    if (!(glitchEncountered)) {
+        isGlitchEncounter = true
+        startEncounter()
+    }
+    glitchEncountered = true
+})
 // make the enemy make its move
 function enemyTurn () {
     timer.after(1000, function () {
@@ -342,14 +362,7 @@ scene.onOverlapTile(SpriteKind.Player, sprites.castle.tileGrass2, function (spri
     if (tiles.tileAtLocationEquals(newGrassLoc, sprites.castle.tileGrass2)) {
         if (!(lastGrassLoc) || lastGrassLoc.col != newGrassLoc.col || lastGrassLoc.row != newGrassLoc.row) {
             lastGrassLoc = newGrassLoc
-            if (playerSprite.overlapsWith(sprites.create(assets.image`bushGlitch`, SpriteKind.Bush))) {
-                if (randint(0, 9) == 9) {
-                    startEncounter()
-                } else {
-                    isGrassHit = true
-                }
-            } else {
-                isGlitchEncounter = true
+            if (randint(0, 9) == 9) {
                 startEncounter()
             }
         }
@@ -365,10 +378,6 @@ function returnToMap () {
     character.destroy()
     hp.destroy()
     creatureNameSprite.destroy()
-    if (isGlitchEncounter) {
-        effects.blizzard.endScreenEffect()
-        effects.starField.endScreenEffect()
-    }
     scene.setBackgroundImage(img`
         ................................................................................................................................................................
         ................................................................................................................................................................
@@ -497,14 +506,15 @@ function returnToMap () {
     for (let enemySprite2 of sprites.allOfKind(SpriteKind.Enemy)) {
         enemySprite2.destroy()
     }
-    for (let backgroundSprite2 of sprites.allOfKind(SpriteKind.Background)) {
-        backgroundSprite2.destroy()
+    for (let backgroundSprite22 of sprites.allOfKind(SpriteKind.Background)) {
+        backgroundSprite22.destroy()
     }
     initMapScene(playerSprite.x, playerSprite.y)
 }
 function initMapScene (x: number, y: number) {
     initMap()
     isMap = true
+    music.stopAllSounds()
     isScene = false
     lastGrassLoc = getLocation(x, y)
     playerSprite = sprites.create(assets.image`player`, SpriteKind.Player)
@@ -580,8 +590,8 @@ function useBall () {
     moveBattleScene(false)
     story.printCharacterText("You used the net stone")
     throwable = sprites.create(assets.image`netStone`, SpriteKind.Projectile)
-    throwable.setPosition(25, 70)
-    throwable.setVelocity(400, 40)
+    throwable.setPosition(10, 100)
+    throwable.setVelocity(440, -80)
     timer.after(300, function () {
         throwable.setVelocity(0, 0)
         creature.destroy()
@@ -623,6 +633,8 @@ let platformSprite: Sprite = null
 let grassSprite: Sprite = null
 let hp: StatusBarSprite = null
 let npcLocation: tiles.Location = null
+let glitchEncountered = false
+let flower2: tiles.Location = null
 let creatureAddition2: Sprite = null
 let creatureAddition: Sprite = null
 let creature: Sprite = null
@@ -633,7 +645,6 @@ let aggravation = 0
 let isGlitchEncounter = false
 let staticKinds: number[] = []
 let creatures: string[] = []
-let isGrassHit = false
 let rotation = ""
 let countdownLeft = 0
 let countdownLastStart = 0
@@ -678,7 +689,7 @@ namespace NPC {
             goBackAnimation: assets.animation`heroWalkLeft`,
             afterDialogCallback: () => {
                 info.setScore(0)
-                timer.after(/*countdownLeft * 2000*/1000, function () {
+                timer.after(countdownLeft * 1500, function () {
                     isGlitching = true
                     if (isMap) {
                         glitchInit()
@@ -709,8 +720,8 @@ namespace NPC {
             interacted: false
         },
         {
-            name: "Bystander",
-            callOut: "You there!",
+            name: "Joe",
+            callOut: "Matthew!",
             sprite: undefined,
             kind: SpriteKind.NPC_Right,
             x: 80,
@@ -720,7 +731,41 @@ namespace NPC {
             goBackAnimation: assets.animation`villager3WalkLeft`,
             dialogs: [
                 {
-                    text: ""
+                    text: "Hey Matthew, are you here to catch the animals?"
+                },
+                {
+                    text: "Do you even know what started this all?"
+                },
+                {
+                    name: "Matthew",
+                    text: "No sir, I actually don't."
+                },
+                {
+                    text: "I actually feel obliged to tell you,\nsince you're helping to catch these animals."
+                },
+                {
+                    text: "Once upon a time, the people of our town were very poor."
+                },
+                {
+                    text: "They only had farmland to produce crops,\nbut one day a farmer showed up."
+                },
+                {
+                    text: "The farmer told us all about mass production."
+                },
+                {
+                    text: "To do this he used animals."
+                },
+                {
+                    text: "The cows grew in size,\nand the goats grew in numbers for the meat production."
+                },
+                {
+                    text: "The beavers and elephants were trained to cut down trees."
+                },
+                {
+                    text: "We thought that it went well,\na little bit too well."
+                },
+                {
+                    text: "By the time everyone caught up on the news,\nit was far too late."
                 }
             ],
             range: 5,
@@ -738,7 +783,14 @@ namespace NPC {
             goBackAnimation: assets.animation`villager2WalkBack`,
             dialogs: [
                 {
-                    text: ""
+                    text: "Hi there stranger! Do you want to know a fun fact?"
+                },
+                {
+                    name: "Matthew",
+                    text: "Sure!"
+                },
+                {
+                    text: "If you somehow extend our time something really weird will happen!"
                 }
             ],
             range: 4,
@@ -799,7 +851,6 @@ namespace NPC {
     }
 }
 rotation = "Down"
-isGrassHit = false
 isGlitching = false
 creatures = [
 "Beaver",
@@ -818,48 +869,75 @@ SpriteKind.Bush
 ]
 countdownLeft = 300
 isGlitchEncounter = false
-initMapScene(160, 5)
-// effects
-forever(function () {
-    if (isGrassHit) {
-        music.playMelody("F E D - - - - - ", 500)
-        isGrassHit = false
-    }
+let logo = sprites.create(img`
+    ..........................................................................................................................................
+    ..........................................................................................................................................
+    ..........................................................................................................................................
+    ...dbbdddddd...dddddd......ddd...ddd.........ddd...ddd...dddddd.........dddddd......dddddb.........ddd......bbdddd......ddd...ddddddddd...
+    ...bbbbdddbd...dbdddd......dbd...dbb.........ddd...ddb...dddddd.........dbbddd......ddddbb.........ddd......bbbddd......ddd...ddddddddd...
+    ...ddddddbbb...bbbddd......bbb...bbb.........ddd...dbb...bddddd.........dddddd......dddddd.........ddd......dddddd......ddd...ddbbddddb...
+    ...ddd.........dddddd......ddd...ddd.........bbd.........ddd...ddb...ddd......ddd...ddb...ddd...ddd...ddd...ddddbb......ddd......bbd......
+    ...ddd.........dddddd......ddd...ddd.........bbb.........ddd...dbb...ddb......ddb...dbb...ddd...ddd...ddd...dddbbb......bdd......ddd......
+    ...ddd.........dddddd......ddd...ddd.........ddd.........ddb...ddd...dbb......ddd...ddd...ddd...ddb...ddd...dddddd......bbd......ddd......
+    ...ddddddddd...ddd...ddd...ddd......ddd...ddd......ddd...dddddd......ddd......ddd...ddd...ddd...dbbbbdddd...ddd...ddd...ddd......ddd......
+    ...ddddddddd...ddd...ddd...ddd......ddd...ddd......ddd...dddddd......ddd......ddd...ddd...ddd...ddddddddd...ddd...ddd...ddd......ddd......
+    ...777777777...777...777...777......777...777......777...777777......777......777...777...777...7777e7777...777...e77...777......777......
+    ...e77.........777......777777......777...777......777...777...777...e77......777...777...777...777...777...e77......777777......777......
+    ...777.........7e7......777777......7e7...e77......777...7e7...777...777......777...777...777...77e...777...777......777777......777......
+    ...777.........777......7e7777......777...77e......777...7e7...777...777......777...777...777...777...777...77e......7777e7......7e7......
+    ...777777777...e77......e777e7.........77e.........7e7...7e7...777......7777e7......777e77......777...777...777......777e77......7e7......
+    ...e777e7777...777......777777.........777.........ee7...777...77e......777e77......77e777......777...777...777......7e7777......777......
+    ...777e777e7...e77......777777.........777.........777...777...777......777777......777777......777...7e7...777......777777......e77......
+    ..........................................................................................................................................
+    ..........................................................................................................................................
+    ..........................................................................................................................................
+    `, SpriteKind.Static)
+logo.startEffect(effects.starField)
+timer.after(2800, function () {
+    effects.clearParticles(logo)
+    logo.destroy(effects.halo, 1000)
+})
+timer.after(4000, function () {
+    initMapScene(160, 5)
 })
 // Music1
 forever(function () {
-    if (isMap) {
+    if (isMap || isGlitchEncounter) {
         for (let index = 0; index < 2; index++) {
             music.playMelody("- - - - - - - - ", 120)
             pause(10)
             music.playMelody("- - - - - - - - ", 120)
         }
-        while (isMap) {
+        while (isMap || isGlitchEncounter) {
             music.playMelody("G A F D G E C F ", 120)
             pause(10)
             music.playMelody("E D F E - D C D ", 120)
         }
-    } else {
-        music.playMelody("C5 B A B C5 B C5 B ", 360)
     }
 })
-// Music2
 forever(function () {
-    if (isMap) {
-        while (isMap) {
-            music.playMelody("C5 B C5 B G G A B ", 120)
-            pause(10)
-            music.playMelody("D A B G C5 C D F ", 120)
-        }
+    if (!(isMap)) {
+        music.playMelody("E F C D D C E C ", 360)
+        music.playMelody("C5 B C5 G A F C5 G ", 120)
     }
 })
 // Music3
 forever(function () {
-    if (isMap) {
-        while (isMap) {
+    if (isMap || isGlitchEncounter) {
+        while (isMap || isGlitchEncounter) {
             music.playMelody("D C D E D C E D ", 120)
             pause(10)
             music.playMelody("C D E C5 B D C E ", 120)
+        }
+    }
+})
+// Music2
+forever(function () {
+    if (isMap || isGlitchEncounter) {
+        while (isMap || isGlitchEncounter) {
+            music.playMelody("C5 B C5 B G G A B ", 120)
+            pause(10)
+            music.playMelody("D A B G C5 C D F ", 120)
         }
     }
 })
