@@ -689,7 +689,7 @@ namespace NPC {
             goBackAnimation: assets.animation`heroWalkLeft`,
             afterDialogCallback: () => {
                 info.setScore(0)
-                timer.after(countdownLeft * 1500, function () {
+                timer.after(countdownLeft * 2000, function () {
                     isGlitching = true
                     if (isMap) {
                         glitchInit()
@@ -706,14 +706,18 @@ namespace NPC {
                     text: "Hi there."
                 },
                 {
-                    text: "Are you here to help with catching the farm animals?"
+                    text: "Are you here to help with catching the animals?"
                 },
                 {
                     name: "Matthew",
                     text: "Yes, I am."
                 },
                 {
-                    text: "Ok, then good luck out there. Hurry though, before it's too late!"
+                    text: "Ok, then good luck out there.\nYou need a total of 200 catch points."
+                }
+                ,
+                {
+                    text: "Hurry though, before it's too late!"
                 }
             ],
             range: 5,
